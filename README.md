@@ -7,9 +7,9 @@
 ### protoc 工具需先安装 
   ```https://github.com/google/protobuf/releases/download/v2.4.1/protobuf-2.4.1.tar.gz```
   
-### 服务端 go run serve/serve.go
-
-### 客户端 client/client.go
+- 服务端 go run serve/serve.go
+- 客户端 client/client.go
+- 目录结构
 ```
 ├── client
 │   └── client.go //客户端
