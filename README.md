@@ -43,6 +43,7 @@
 ```
 
 ###实现
+####服务端
 定义proto文件
 ```
     syntax = "proto3";
@@ -112,3 +113,43 @@ protoful类型映射参见：https://blog.csdn.net/superbfly/article/details/179
     }
 ```
 起服务 go run serve/serve.go
+
+####客户端
+实例代码
+```
+    import (
+        "log"
+        "golang.org/x/net/context"
+        "google.golang.org/grpc"
+        pb "frrpc/protoFile" //为genPb.sh生成文件
+        "fmt"
+    )
+    const (
+        address     = "localhost:50051"
+    )
+
+    func main() {
+        conn, err := grpc.Dial(address, grpc.WithInsecure()) //连接服务
+        if err != nil {
+            log.Fatal("did not connect: %v", err)
+        }
+        defer conn.Close()
+        c := pb.NewGreeterClient(conn)
+        //构造请求数据
+        request := &pb.RedisCacheRequest{
+            Name:"wangyu",
+            Express:200,
+            Value:"hello",
+        }
+        //发起请求
+        r , err := c.RedisCache(context.Background(), request)
+        if err != nil {
+            log.Fatal("could not greet: %v", err)
+        }
+        fmt.Println(r)
+    }
+```
+
+
+
+
