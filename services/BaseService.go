@@ -6,14 +6,34 @@ import (
 	"time"
 	"log"
 	"io"
+	"github.com/garyburd/redigo/redis"
 )
 
 type BaseService struct {
 
 }
 
-//const confPath  =  "/Users/mc/Documents/go/src/frrpc/conf/setting.conf"
-const confPath  =  "/alidata/www/golang/src/frrpc/conf/setting.conf"
+//相对路径是根据可执行文件当前位置
+const confPath  =  "./conf/setting.conf"
+const envPath  =  "./conf/env.conf"
+
+var env string
+
+/**
+ * 获取环境变量
+ */
+func (t *BaseService) GetEnv() string {
+	c , err := goconfig.LoadConfigFile(envPath)
+	if err != nil {
+		log.Fatal("load config file error: ", err)
+	}
+	//先获取运行环境
+	env , err = c.GetValue("default" , "runmode")
+	if err != nil {
+		log.Fatal("load env file error: ", err)
+	}
+	return env
+}
 
 /**
  * 获取配置文件
@@ -27,16 +47,17 @@ func (t *BaseService) GetConf() (*goconfig.ConfigFile , error) {
  * 根据键获取值
  */
 func (t *BaseService) GetVal(name string) string {
-	cfg , _ := t.GetConf()
-	//先获取运行模式
-	section , err := cfg.GetValue("DEFAULT" , "runmode")
+	cfg , err := t.GetConf()
+	if err != nil {
+		log.Fatal("load config file error: ", err)
+	}
+	section := t.GetEnv()
 	val , err := cfg.GetValue(section , name)
 	if err != nil {
-		val = ""
+		log.Fatal("parse config fail 2: ", err)
 	}
 	return val
 }
-
 
 /**
  * 日志写入，需先在调用的模块controller统计目录创建runtime目录
@@ -62,3 +83,23 @@ func (t *BaseService) LogInfo(file_name string, file_content string) {
 	trace.Println(file_content)
 }
 
+/**
+ * 获取redis链接
+ */
+func (t *BaseService) GetRedisClient() redis.Conn{
+	var client redis.Conn
+	var host , pass string
+	host = t.GetVal("redishost")
+	pass = t.GetVal("redispass")
+	client , err :=  redis.Dial("tcp", host)
+	if err != nil {
+		log.Fatal("redis error: %v", err)
+	}
+	if pass != "" {
+		_ , err = client.Do("AUTH", pass)
+		if err != nil {
+			log.Fatal("redis error: %v", err)
+		}
+	}
+	return client
+}

@@ -8,11 +8,11 @@ import (
 	"google.golang.org/grpc"
 	pb "frrpc/protoFile"
 	"frrpc/services/redisCache"
+	"frrpc/services/frLog"
+	"frrpc/services"
 )
 
-const (
-	port = "114.55.248.175:50051"
-)
+
 
 type server struct {}
 
@@ -24,8 +24,24 @@ func (s *server) RedisCache(ctx context.Context, in *pb.RedisCacheRequest) (repl
 	return
 }
 
+func (s *server) GetCache(ctx context.Context, in *pb.GetCacheRequest) (reply *pb.GetCacheReply , err error) {
+	reply , err = redisCache.GetCache(in.Name)
+	return
+}
+
+/**
+ * 写kibana日志服务
+ */
+func (s *server) FrLog(ctx context.Context , in *pb.FrLogRequest) (reply *pb.FrLogReply , err error) {
+	reply , err = frLog.WriteLog(in.Tag , in.Info , in.Level)
+	return
+}
+
 func main() {
-	lis, err := net.Listen("tcp", port)
+	base := services.BaseService{}
+	port := base.GetVal("rpcserve")
+	base.LogInfo("index" , port)
+	lis , err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal("failed to listen: %v", err)
 	}
